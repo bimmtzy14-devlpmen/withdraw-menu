@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Withdraw Dashboard</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif}
+body{margin:0;background:#f2f2f2;color:#111}
+
+/* HEADER */
+.header{
+  position:fixed;top:0;left:0;width:100%;height:60px;
+  background:#fff;border-bottom:2px solid #000;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;z-index:2000
+}
+.header-left{display:flex;align-items:center;gap:15px}
+.hamburger{font-size:24px;cursor:pointer}
+.clock{font-size:14px}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;top:60px;left:-260px;width:250px;
+  height:calc(100% - 60px);background:#000;
+  transition:.3s;z-index:1000
+}
+.sidebar.active{left:0}
+.sidebar a{
+  display:block;padding:15px 20px;color:#fff;
+  text-decoration:none;border-bottom:1px solid #222
+}
+.sidebar a:hover{background:#111}
+.logout{
+  position:absolute;bottom:0;width:100%;
+  background:#fff;color:#000 !important;font-weight:bold
+}
+
+/* MAIN */
+.main{padding:90px 20px}
+
+/* CARDS */
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;margin-bottom:25px
+}
+.card{
+  background:#fff;border:2px solid #000;
+  padding:15px;border-radius:8px
+}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;background:#fff}
+thead{background:#000;color:#fff}
+th,td{padding:10px;border:1px solid #000;font-size:14px}
+tbody tr:hover{background:#eee}
+
+/* STATUS */
+.pending{color:#f39c12;font-weight:bold}
+.success{color:#2ecc71;font-weight:bold}
+.reject{color:#e74c3c;font-weight:bold}
+
+/* BUTTON */
+button{
+  padding:6px 10px;
+  border:none;
+  cursor:pointer;
+  font-size:13px;
+  margin-right:5px
+}
+.approve{background:#2ecc71;color:#fff}
+.rejectBtn{background:#e74c3c;color:#fff}
+
+/* POPUP */
+.popup{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  background:#fff;border:2px solid #000;
+  padding:20px 30px;display:none;
+  z-index:3000
+}
+
+/* RESPONSIVE */
+@media(min-width:768px){
+  .sidebar{left:0}
+  .main{margin-left:250px}
+  .hamburger{display:none}
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="hamburger" id="hamburger" onclick="toggleMenu()">☰</div>
+    <strong>Withdraw Dashboard</strong>
+  </div>
+  <div class="clock" id="clock"></div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <a href="#">🏠 Home</a>
+  <a href="#">💰 Deposit</a>
+  <a href="#">💸 Withdraw</a>
+  <a href="#">⚙️ Setting Player</a>
+  <a href="login.html" class="logout">🚪 Logout</a>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<div class="cards">
+  <div class="card">Total Request<br><b id="totalReq">0</b></div>
+  <div class="card">Pending<br><b id="pending">0</b></div>
+  <div class="card">Success<br><b id="success">0</b></div>
+  <div class="card">Reject<br><b id="reject">0</b></div>
+  <div class="card">Total Nominal<br><b id="totalNominal">Rp 0</b></div>
+</div>
+
+<table>
+<thead>
+<tr>
+  <th>ID WD</th>
+  <th>USERNAME</th>
+  <th>NOMINAL</th>
+  <th>METODE</th>
+  <th>STATUS</th>
+  <th>WAKTU</th>
+  <th>AKSI</th>
+</tr>
+</thead>
+<tbody id="wdTable"></tbody>
+</table>
+
+</div>
+
+<div class="popup" id="popup">✅ Withdraw berhasil diproses</div>
+
+<script>
+/* ===== CLOCK ===== */
+setInterval(()=>{
+  clock.innerText=new Date().toLocaleTimeString("id-ID");
+},1000);
+
+/* ===== MENU ===== */
+const sidebar=document.getElementById("sidebar");
+const hamburger=document.getElementById("hamburger");
+function toggleMenu(){
+  sidebar.classList.toggle("active");
+  hamburger.innerHTML=sidebar.classList.contains("active")?"✖":"☰";
+}
+
+/* ===== USERNAME ENGINE ===== */
+const humanNames=["dafa","rizal","budi","rafi","andi","fajar","iqbal","adi","nanda","kevin"];
+const nickWords=["ganteng","hoki","win","jepe","sultan","mantap"];
+const numberList=[1,12,76,88,188,90,0,5,7];
+
+function randomUsername(){
+  const name=humanNames[Math.floor(Math.random()*humanNames.length)];
+  const nick=Math.random()<0.7 ? nickWords[Math.floor(Math.random()*nickWords.length)] : "";
+  const num=numberList[Math.floor(Math.random()*numberList.length)];
+  return name+nick+num;
+}
+
+/* ===== WITHDRAW ENGINE ===== */
+const banks=["BCA","BNI","BRI","Mandiri"];
+const wallets=["Dana","OVO","Gopay","ShopeePay"];
+const table=document.getElementById("wdTable");
+const popup=document.getElementById("popup");
+
+let wdID=1;
+const withdraws=[];
+
+function rupiah(n){return "Rp "+n.toLocaleString("id-ID")}
+function now(){return new Date().toLocaleString("id-ID")}
+
+function randomNominal(){
+  const r=Math.random();
+  if(r<0.6) return Math.floor(Math.random()*680000)+120000;
+  if(r<0.9) return Math.floor(Math.random()*1200000)+800000;
+  return Math.floor(Math.random()*5000000)+2000000;
+}
+
+function createWithdraw(){
+  withdraws.unshift({
+    id:"WD-"+String(wdID++).padStart(6,"0"),
+    user:randomUsername(),
+    nominal:randomNominal(),
+    method:Math.random()<0.5
+      ? banks[Math.floor(Math.random()*banks.length)]
+      : wallets[Math.floor(Math.random()*wallets.length)],
+    status:"pending",
+    time:now()
+  });
+}
+
+function approve(i){
+  withdraws[i].status="success";
+  popup.style.display="block";
+  setTimeout(()=>popup.style.display="none",1500);
+  render();
+}
+
+function reject(i){
+  withdraws[i].status="reject";
+  render();
+}
+
+function render(){
+  table.innerHTML="";
+  let p=0,s=0,r=0,total=0;
+
+  withdraws.forEach((w,i)=>{
+    if(w.status==="pending")p++;
+    if(w.status==="success"){s++;total+=w.nominal}
+    if(w.status==="reject")r++;
+
+    table.innerHTML+=`
+    <tr>
+      <td>${w.id}</td>
+      <td>${w.user}</td>
+      <td>${rupiah(w.nominal)}</td>
+      <td>${w.method}</td>
+      <td class="${w.status}">${w.status.toUpperCase()}</td>
+      <td>${w.time}</td>
+      <td>
+        ${w.status==="pending"
+        ? `<button class="approve" onclick="approve(${i})">Approve</button>
+           <button class="rejectBtn" onclick="reject(${i})">Reject</button>`
+        : "-"}
+      </td>
+    </tr>`;
+  });
+
+  totalReq.innerText=withdraws.length;
+  pending.innerText=p;
+  success.innerText=s;
+  reject.innerText=r;
+  totalNominal.innerText=rupiah(total);
+}
+
+/* ===== RANDOM REQUEST ===== */
+function schedule(){
+  createWithdraw();
+  render();
+  setTimeout(schedule,(Math.random()*20+30)*60000);
+}
+
+/* INIT */
+createWithdraw();
+render();
+schedule();
+</script>
+
+</body>
+</html>
